@@ -1,0 +1,28 @@
+---
+title: "Main"
+author: "Wendy Shi"
+date: "2023-11-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r}
+# load in libraries
+package_list <- c("tidyverse", "vroom", "dplyr")
+
+# load in packages
+for (package_name in package_list) {
+  if (!requireNamespace(package_name, quietly = TRUE)) {
+    install.packages(package_name)
+  }
+  library(package_name, character.only = TRUE)
+}
+
+# load in data
+df <- vroom("ddh.csv")
+```
+
