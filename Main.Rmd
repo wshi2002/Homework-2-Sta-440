@@ -2,7 +2,9 @@
 title: "Main"
 author: "Wendy Shi"
 date: "2023-11-22"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,7 +14,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ```{r}
 # load in libraries
-package_list <- c("tidyverse", "vroom", "dplyr")
+package_list <- c("tidyverse", "vroom", "dplyr", "patchwork")
 
 # load in packages
 for (package_name in package_list) {
@@ -24,5 +26,52 @@ for (package_name in package_list) {
 
 # load in data
 df <- vroom("ddh.csv")
+head(df)
+```
+
+```{r Figure 1, fig.cap="Boxplots of time-weighted average of donor glucose measurements, donor glucose range, and donor glucose standard deviation for 427 recipients experiencing initial graft function (IGF in white) and for 145 recipients experiencing liver graft dysfunction (LGD, in gray)."}
+
+# faceted by IGF and LGD (initial graft function and liver graft dysfunction)
+# Identified by variable "delayed_fn", "1" = yes.
+# Ploted vertically on a logrithmic scale
+
+
+
+ggplot(df, aes(x = factor(delayed_fn), y = glutwa, fill = factor(delayed_fn))) +
+  stat_boxplot(geom ='errorbar', coef = Inf) + 
+  geom_boxplot(coef = Inf, size = 0.2) +
+  scale_y_continuous(limits=c(50, 500),
+                     breaks=c(50, 100, 200, 300, 400, 500),
+                     trans='log10') + 
+  scale_fill_manual(values=c("0"="white", "1"="gray")) +
+  scale_x_discrete(labels=c("0"="IGF", "1"="LGD")) +
+  labs(title="", x= "TWA", y="") +
+  theme(legend.position="none")
+    
+
+range <- ggplot(df, aes(x = factor(delayed_fn), y=glurange, fill=factor(delayed_fn))) +
+  stat_boxplot(geom ='errorbar', coef = Inf) + 
+  geom_boxplot(coef = Inf, size = 0.2) +
+  scale_y_continuous(limits=c(1, 1000), 
+                     breaks=c(1, 10, 100, 1000),
+                     trans='log10') + 
+  scale_fill_manual(values=c("0"="white", "1"="gray")) +
+  scale_x_discrete(labels=c("0"="IGF", "1"="LGD")) +
+  labs(title="", x= "Range", y="") +
+  theme(legend.position="none")
+    
+sd <- ggplot(df, aes(x = factor(delayed_fn), y=glusd, fill=factor(delayed_fn))) +
+  stat_boxplot(geom ='errorbar', coef = Inf) + 
+  geom_boxplot(coef = Inf, size = 0.2) + 
+  scale_y_continuous(limits=c(1, 300), 
+                     breaks=c(1, 10, 100, 200, 300),
+                     trans='log10') + 
+    scale_fill_manual(values=c("0"="white", "1"="gray")) +
+    scale_x_discrete(labels=c("0"="IGF", "1"="LGD")) +
+    labs(title="", x= "SD", y="")+
+    theme(legend.position="none")
+
+
+twa + range + sd + plot_annotation(title = "Donor Glucose Measures mg/dl")
 ```
 
