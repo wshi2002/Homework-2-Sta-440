@@ -88,4 +88,39 @@ sd <- ggplot(df, aes(x = factor(delayed_fn), y=glusd, fill=factor(delayed_fn))) 
 
 twa + range + sd + plot_annotation(title = "Donor Glucose Measures mg/dl")
 ```
+```{r}
+# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
+# interested predictor variable is twa of donor glucose measurements "glutwa".
+# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+
+model <- glm(delayed_fn ~ log(glutwa), data = df, family = "binomial")
+
+model_a <- glm(delayed_fn ~ log(glutwa) + d_age + as.factor(d_cod) + hemo_instability , data = df, family = "binomial")
+
+
+coefficients <- coef(model)
+
+# Calculate the variance of log-relative_doubling_odds_ratio using the delta method
+var <- (log(2))^2 * standard_errors["log(glutwa)"]^2
+
+# Calculate the standard error of relative_doubling_odds_ratio
+std_err <- sqrt(var)
+
+
+
+
+coef_logTWA <- coefficients["log(glutwa)"]
+coef_estimate <- exp(coef_logTWA*log(2))
+lower_CI <- coef_estimate * exp(-1.96 * std_err["log(glutwa)"])
+upper_CI <- coef_estimate * exp(1.96 * std_err["log(glutwa)"])
+
+coef_estimate
+lower_CI
+upper_CI
+
+coef_logTWA_a <- coef(model_a)["log(glutwa)"]
+exp(coef_logTWA_a*log(2))
+
+
+```
 
