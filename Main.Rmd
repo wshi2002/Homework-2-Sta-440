@@ -95,32 +95,74 @@ twa + range + sd + plot_annotation(title = "Donor Glucose Measures mg/dl")
 
 model <- glm(delayed_fn ~ log(glutwa), data = df, family = "binomial")
 
-model_a <- glm(delayed_fn ~ log(glutwa) + d_age + as.factor(d_cod) + hemo_instability , data = df, family = "binomial")
+model_a <- glm(delayed_fn ~ log(glutwa) + d_age + as.factor(d_cod) + 
+                 hemo_instability , data = df, family = "binomial")
+
+```
+
+
+
+```{r}
 
 
 coefficients <- coef(model)
+standard_errors <- summary(model)$coefficients[, "Std. Error"]
 
 # Calculate the variance of log-relative_doubling_odds_ratio using the delta method
 var <- (log(2))^2 * standard_errors["log(glutwa)"]^2
 
-# Calculate the standard error of relative_doubling_odds_ratio
+# Calculate the standard error of the coefficient
 std_err <- sqrt(var)
 
-
-
-
+# getting the raw coefficient
 coef_logTWA <- coefficients["log(glutwa)"]
+
+# getting the coefficient for interpretation associated with doubling of TWA
 coef_estimate <- exp(coef_logTWA*log(2))
+
+# creating confidence interval estimates associated with this coefficient
 lower_CI <- coef_estimate * exp(-1.96 * std_err["log(glutwa)"])
 upper_CI <- coef_estimate * exp(1.96 * std_err["log(glutwa)"])
 
-coef_estimate
-lower_CI
-upper_CI
-
-coef_logTWA_a <- coef(model_a)["log(glutwa)"]
-exp(coef_logTWA_a*log(2))
 
 
+# Conducting the Wald Z test
+wald_z <- coef_logTWA / standard_errors["log(glutwa)"]
+
+# Calculate p-values
+p_value <- 2 * (1 - pnorm(abs(wald_z)))
+
+
+# print out values
+print(paste0("Odds ratio and 95% CI in primary exposure model (TWA) is: ",
+            round(coef_estimate[["log(glutwa)"]], 2), 
+            " (", round(lower_CI[["log(glutwa)"]], 2), ", ",
+            round(upper_CI[["log(glutwa)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value[["log(glutwa)"]], 2)))
+
+# they are doing a profile likelihood instead of a wald test
+```
+
+```{r}
+# same things for adjusted model
+coefficients_a <- coef(model_a)
+standard_errors_a <- summary(model_a)$coefficients[, "Std. Error"]
+var_a <- (log(2))^2 * standard_errors_a["log(glutwa)"]^2
+std_err_a <- sqrt(var_a)
+coef_logTWA_a <- coefficients_a["log(glutwa)"]
+coef_estimate_a <- exp(coef_logTWA_a*log(2))
+lower_CI_a <- coef_estimate_a * exp(-1.96 * std_err_a["log(glutwa)"])
+upper_CI_a <- coef_estimate_a * exp(1.96 * std_err_a["log(glutwa)"])
+
+# Conducting the Wald Z test
+wald_z_a <- coef_logTWA_a / standard_errors_a["log(glutwa)"]
+p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
+
+coef_estimate_a
+lower_CI_a
+upper_CI_a
+p_value_a
 ```
 
