@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning= FALSE, message = FALSE)
 ```
 
 
@@ -142,7 +142,7 @@ print(paste0("Odds ratio and 95% CI in primary exposure unadjusted model (TWA) i
 print(paste0("The p value is: ",
              round(p_value[["log(glutwa)"]], 2)))
 
-# they are doing a profile likelihood instead of a wald test
+# Paper is doing a profile likelihood instead of a wald test
 ```
 
 ```{r}
@@ -275,7 +275,7 @@ p_value<- 2 * (1 - pnorm(abs(wald_z)))
 
 
 # printing out
-print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model (Sd) is: ",
+print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model standard deviation is: ",
             round(coef_estimate[["log(glusd)"]], 2), 
             " (", round(lower_CI[["log(glusd)"]], 2), ", ",
             round(upper_CI[["log(glusd)"]], 2),")" ))
@@ -301,7 +301,7 @@ p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
 
 
 # print out values
-print(paste0("Odds ratio and 95% CI in Secondary exposure adjusted model Range is: ",
+print(paste0("Odds ratio and 95% CI in Secondary exposure adjusted model standard deviation is: ",
             round(coef_estimate_a[["log(glusd)"]], 2), 
             " (", round(lower_CI_a[["log(glusd)"]], 2), ", ",
             round(upper_CI_a[["log(glusd)"]], 2),")" ))
