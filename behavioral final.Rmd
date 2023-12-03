@@ -1,0 +1,265 @@
+---
+title: "Behavioral Econ Final Question 2"
+author: "Wendy Shi"
+date: "2023-11-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+# load in libraries
+package_list <- c("tidyverse", "dplyr", "knitr", "broom")
+
+# load in packages
+for (package_name in package_list) {
+  if (!requireNamespace(package_name, quietly = TRUE)) {
+    install.packages(package_name)
+  }
+  library(package_name, character.only = TRUE)
+}
+
+
+```
+
+In our analysis, we conducted a class experiment following in the format of the experiments conducted in the paper "Overconfidence and Excess Entry" by Colin Camerer and Dan Lovallo.
+
+We will recreate the data displays table 2, 3, 4, 5 from the paper in our analysis.
+
+First table 3 gives a general description of our experiment.
+
+```{r}
+table3 <- data.frame(Sample = "Duke, undergraduates", n=14, Selection_procedure = "class students", Rank_order = "R/S")
+
+kable(table3)
+
+```
+Then we will analyze industry profit data by recreating tables 2 and 4.
+First we enter in data noting the round, capacity for each round, and actual number of entrants in the random round and the skill rounds.
+The first data is displayed here.
+
+```{r}
+# create data
+round <- c(seq(1, 12, 1))
+capacity <- c(2, 4, 8, 6, 4, 2, 8, 6, 4, 6, 8, 2) 
+entrants_r <- c(4, 5, 12, 9, 5, 6, 12, 5, 7, 9, 10, 3)
+entrants_s <- c(7, 10, 13, 10, 4, 5, 13, 10, 10, 10, 13, 6)
+
+df<-data.frame(round, capacity, entrants_r, entrants_s)
+kable(df)
+```
+We then mutate to create variables in our data noting industry profit for random and skilled rounds separately. The variables are notated as "ind_profit_r" and "ind_profit_s".
+
+```{r}
+# mutate to create variables industry profit for random and skilled rounds separately.
+df<-df%>%
+  mutate(ind_profit_r = ifelse(entrants_r <= capacity, 
+                                50,
+                                50+(entrants_r - capacity)*(-10)))%>%
+  mutate(ind_profit_s = ifelse(entrants_s <= capacity, 
+                                50,
+                                50+(entrants_s - capacity)*(-10)))
+
+
+kable(df)
+```
+
+
+In our analysis we found the following:
+```{r}
+# Analysis
+print("industry profit is positive in 100% of the random rounds and 80% of the skilled rounds")
+
+# average profit in random rounds
+paste0("average industry profit across rounds in random rounds is ", round(sum(df$ind_profit_r)/nrow(df), 2))
+
+# average profit in skilled rounds
+paste0("average industry profit across rounds in skilled rounds is ", sum(df$ind_profit_s)/nrow(df))
+
+```
+From these calculations, we conclude similar results as in the paper, there is indeed more entry (and lower industry profit) when people are betting on their own relative skill rather than on a random device. In the all of the random rank rounds, industry profit was positive, and it was positive in a smaller proportion, 80% of the skill ranked rounds. We also found consistent results with the paper of a difference in average industry profit of about 26.67 - 7.5 = 19.17, which means about 2 extra entrants per round in the skill conditions. 
+
+Even though our sample size is much smaller overall than in the paper (not enough to apply rule of 30 in CLT), we believe the differences follow a distribution not too far from the normal, and conduct a paired 2 tail t test. Note because of the smaller sample sizes, this result should be taken with caution.
+
+The matched-pair t-test using these comparisons yields t = -3.53, p<0.01, which means we reject the null hypothesis that the industry profits are the same, and conclude there is evidence for a difference in the industry profits. 
+```{r}
+# sample size is a bit small for CLT but we will still do t test
+# matched pair t test
+result <- t.test(df$ind_profit_s, df$ind_profit_r, paired = TRUE)
+
+# Print the result
+kable(tidy(result))
+```
+
+
+
+
+
+We also replicate table 5 in the paper, which tests for an alternative explanation of the blind spots hypothesis. Which suggests that excessive entry in skill conditions may be due to players underforecasting how many others will enter. We test this hypothesis by similar method to the paper, and look at the subject's forecast for how many entrants there will be and calculate the expected profit from entering. We then look at the difference in expected average profits in random rounds and the same statistic in skilled rounds using only the rounds in which a subject entered. 
+A more detailed description of the method can be found in the paper.
+
+In order to do this, we first enter in all of the data.
+The expected number of entrants in random rounds is denoted as "exp_num_entrants_r", and the expected number of entrants in skill rounds is denoted as "exp_num_entrants_s", there are two indicator variables denoting if the subject actually entered in that round noted as "entered_r" and "entered_s".
+An example of the entered dataframe is provided for person 4.
+
+```{r}
+df1 <- data.frame(exp_num_entrants_r = c(0, 4, 12, 7, 6, 1, 12, 8, 4, 6, 12, 4),
+                  entered_r =c(0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0),
+                  exp_num_entrants_s = c(6, 8, 12, 10, 9, 2, 10, 10, 6, 11, 13, 15),
+                  entered_s = c(0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0))
+
+df2 <- data.frame(exp_num_entrants_r = c(0, 6, 14, 10, 5, 5, 14, 11, 6, 9, 14, 5),
+                  entered_r = c(0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0),
+                  exp_num_entrants_s = c(5, 9, 14, 9, 8, 6, 14, 10, 6, 10, 13, 5),
+                  entered_s = c(0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+
+df3 <- data.frame(exp_num_entrants_r = c(8, 8, 10, 8, 6, 4, 12, 9, 6, 10, 12, 5),
+                  entered_r = c(1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                  exp_num_entrants_s = c(4, 8, 12, 10, 6, 6, 13, 10, 9, 10, 13, 5),
+                  entered_s = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+
+df4 <- data.frame(exp_num_entrants_r = c(6, 8, 10, 10, 7, 4, 12, 10, 6, 8, 12, 5),
+                  entered_r = c(0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0),
+                  exp_num_entrants_s = c(5, 8, 12, 10, 8, 6, 12, 10, 8, 8, 13, 5),
+                  entered_s = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0))
+
+df5 <- data.frame(exp_num_entrants_r = c(6, 10, 12, 8, 5, 4, 12, 10, 8, 8, 11, 7),
+                  entered_r = c(0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0),
+                  exp_num_entrants_s = c(6, 8, 14, 10, 7, 4, 12, 10, 8, 10, 13, 8),
+                  entered_s = c(1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0))
+
+df6 <- data.frame(exp_num_entrants_r = c(7, 9, 13, 11, 9, 7, 13, 11, 9, 11, 13, 7),
+                  entered_r = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                  exp_num_entrants_s = c(7, 9, 13, 11, 9, 7, 13, 11, 9, 11, 13, 7),
+                  entered_s = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0))
+
+df7 <- data.frame(exp_num_entrants_r = c(4, 6, 8, 8, 6, 4, 12, 8, 5, 7, 9, 4),
+                  entered_r = c(0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0),
+                  exp_num_entrants_s = c(6, 10, 14, 10, 8, 4, 14, 10, 6, 10, 13, 5),
+                  entered_s = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+
+df8 <- data.frame(exp_num_entrants_r = c(4, 6, 10, 7, 7, 3, 11, 9, 6, 8, 12, 7),
+                  entered_r = c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                  exp_num_entrants_s = c(6, 7, 13, 10, 6, 5, 12, 10, 4, 10, 12, 5),
+                  entered_s = c(0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0))
+
+df9 <- data.frame(exp_num_entrants_r = c(7, 8, 10, 8, 7, 5, 11, 9, 7, 8, 12, 7),
+                  entered_r = c(1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0),
+                  exp_num_entrants_s = c(5, 7, 13, 8, 9, 7, 13, 9, 6, 10, 14, 6),
+                  entered_s = c(1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1))
+
+df10 <- data.frame(exp_num_entrants_r = c(8, 3, 14, 10, 6, 3, 12, 9, 6, 8, 11, 5),
+                  entered_r = c(0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0),
+                  exp_num_entrants_s = c(7, 5, 12, 9, 8, 5, 11, 10, 7, 9, 13, 10),
+                  entered_s = c(0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1))
+
+df11 <- data.frame(exp_num_entrants_r = c(5, 7, 14, 9, 7, 3, 13, 9, 5, 7, 12, 5),
+                  entered_r = c(0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0),
+                  exp_num_entrants_s = c(3, 7, 14, 10, 9, 4, 13, 10, 6, 11, 13, 5),
+                  entered_s = c(0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0))
+
+df12 <- data.frame(exp_num_entrants_r = c(5, 7, 12, 9, 7, 5, 11, 10, 6, 7, 12, 5),
+                  entered_r = c(1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1),
+                  exp_num_entrants_s = c(4, 8, 13, 10, 9, 5, 13, 11, 8, 9, 13, 6),
+                  entered_s = c(1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0))
+
+
+df13 <- data.frame(exp_num_entrants_r = c(5, 7, 10, 8, 7, 5, 11, 8, 6, 8, 10, 4),
+                  entered_r = c(0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0),
+                  exp_num_entrants_s = c(6, 6, 12, 11, 9, 7, 12, 9, 8, 10, 12, 6),
+                  entered_s = c(0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1))
+
+
+df14 <- data.frame(exp_num_entrants_r = c(5, 7, 10, 7, 8, 4, 11, 9, 8, 9, 11, 6),
+                  entered_r = c(0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0),
+                  exp_num_entrants_s = c(3, 6, 10, 10, 9, 5, 12, 10, 6, 10, 13, 8),
+                  entered_s = c(0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0))
+
+kable(df4)
+```
+
+
+For each dataframe i, we calculate the expected profit the subject i thinks the average entrant will earn in each round for random and skill rounds and note that as the variable "exp_profit_r" and "exp_profit_s",  we also calculate average expected profit for each subject for random vs skilled rounds (averaged for only rounds they entered). 
+Another example of such a finished dataframe is provided, along with the dataframe showing the list of expected profit in random rounds and skilled rounds for the subjects.
+```{r}
+
+list_of_dfs <- list(df1, df2, df3, df4, df5, df6, df7,
+                    df8, df9, df10, df11, df12, df13, df14 )
+
+list_of_new_dfs <- list()
+list_exp_avg_profit_r <- c()
+list_exp_avg_profit_s <- c()
+# Loop through the list of data frames and add a new variable
+for (i in seq(1, 14, 1)) {
+  data <- list_of_dfs[i]
+  data <- as.data.frame(data)
+  
+  # adding capacity variable
+  data$capacity <- capacity
+  
+  # adding expected profit subject i thinks the average entrant will earn in each round
+  data <- data%>%
+    mutate(exp_profit_r = (50-10*(exp_num_entrants_r - capacity))/exp_num_entrants_r)%>%
+    mutate(exp_profit_s = (50-10*(exp_num_entrants_s - capacity))/exp_num_entrants_s)%>%
+    mutate(exp_profit_r = round(exp_profit_r, 2))%>%
+    mutate(exp_profit_s = round(exp_profit_s, 2))
+  
+  # create new list of dfs
+  list_of_new_dfs[[i]] <- data
+  
+  
+  # calculate average expected profit for each subject (in only rounds they entered)
+  exp_avg_profit_r <- round(mean(data$exp_profit_r[data$entered_r == 1], na.rm = TRUE), 2)
+  exp_avg_profit_s <- round(mean(data$exp_profit_s[data$entered_s == 1], na.rm = TRUE), 2)
+  
+  # store values in lists
+  list_exp_avg_profit_r <- c(list_exp_avg_profit_r, exp_avg_profit_r)
+  list_exp_avg_profit_s <- c(list_exp_avg_profit_s, exp_avg_profit_s)
+}
+
+kable(list_of_new_dfs[[4]])
+
+kable(data.frame(expected_avg_profit_ifentering_r = list_exp_avg_profit_r,
+                 expected_avg_profit_ifentering_s = list_exp_avg_profit_s))
+
+```
+
+
+We calculate the table 5 values, the first value being the mean difference between the average expected profit in random rounds and skilled rounds, and also conduct a t test on this value. The p value is less than 0.01, meaning we are able to reject the null that there is no difference between the average expected profit in random rounds and skilled rounds at the 0.05 significance level. Again, as above, because of smaller sample size, we take this result with caution.
+
+```{r}
+
+# table 5 first value, diff between expected profit in random rounds and skilled rounds 
+mean_diff <- mean(list_exp_avg_profit_r - list_exp_avg_profit_s)
+mean_diff
+# t test
+kable(tidy(t.test(list_exp_avg_profit_r, list_exp_avg_profit_s, paired = T)))
+
+```
+
+
+We also calculate the number of subjects for which the average random expected profit greater than average skilled expected profit, and calculate the percentage. We found this nubmer to be 12 out of 14, which is 86%. 
+Lastly, we calculated the number of subjects with average skilled expected profit being negative, and found this was 0, and therefore 0%.
+```{r}
+# number of S's with average random expected profit greater than average skilled expected profit
+sum(list_exp_avg_profit_r > list_exp_avg_profit_s)
+
+# percentage of ...
+sum(list_exp_avg_profit_r > list_exp_avg_profit_s)/length(list_exp_avg_profit_s)
+
+# The number of S's with average skilled expected profit being negative
+sum(list_exp_avg_profit_s < 0) 
+
+# percentage of ...
+sum(list_exp_avg_profit_s < 0)/length(list_exp_avg_profit_s)
+```
+Our results are mostly consistent with the results of the papers, people are entering the market more during the skilled rounds even when they believe the expected profits from entering are lower than in the random rounds. Suggesting evidence that entrants are indeed overconfident in their skill.
+
+The results of this paper are interesting, people tend to be overconfident in areas where they are more in control of their outcomes. This is seen in other world situations, for example people often think that driving is much safer than it actually is because we are in control ourselves (in an episode of freakonomics), however aggregate data suggests we are overconfident in our abilities to control the car.
+
+We do note however, this is simply a class experiment in a limited setting, and our results, similar to as noted in the paper, need to be applied to real world market entry with a grain of salt.  
+

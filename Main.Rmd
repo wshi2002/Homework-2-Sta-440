@@ -103,7 +103,7 @@ model_a <- glm(delayed_fn ~ log(glutwa) + d_age + as.factor(d_cod) +
 
 
 ```{r}
-
+# odds ratio extraction, CI creation. Testing
 
 coefficients <- coef(model)
 standard_errors <- summary(model)$coefficients[, "Std. Error"]
@@ -134,7 +134,7 @@ p_value <- 2 * (1 - pnorm(abs(wald_z)))
 
 
 # print out values
-print(paste0("Odds ratio and 95% CI in primary exposure model (TWA) is: ",
+print(paste0("Odds ratio and 95% CI in primary exposure unadjusted model (TWA) is: ",
             round(coef_estimate[["log(glutwa)"]], 2), 
             " (", round(lower_CI[["log(glutwa)"]], 2), ", ",
             round(upper_CI[["log(glutwa)"]], 2),")" ))
@@ -160,9 +160,154 @@ upper_CI_a <- coef_estimate_a * exp(1.96 * std_err_a["log(glutwa)"])
 wald_z_a <- coef_logTWA_a / standard_errors_a["log(glutwa)"]
 p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
 
-coef_estimate_a
-lower_CI_a
-upper_CI_a
-p_value_a
+
+# print out values
+print(paste0("Odds ratio and 95% CI in primary exposure adjusted model (TWA) is: ",
+            round(coef_estimate_a[["log(glutwa)"]], 2), 
+            " (", round(lower_CI_a[["log(glutwa)"]], 2), ", ",
+            round(upper_CI_a[["log(glutwa)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value_a[["log(glutwa)"]], 2)))
+
+
+```
+
+```{r}
+# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
+# interested predictor variable is now Range of donor glucose measurements. "glurange"
+# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+
+model <- glm(delayed_fn ~ log(glurange), data = df, family = "binomial")
+model_a <- glm(delayed_fn ~ log(glurange) + d_age + as.factor(d_cod) + 
+                 hemo_instability , data = df, family = "binomial")
+
+```
+
+```{r}
+# odds ratio extraction, CI creation. Testing
+
+coefficients <- coef(model)
+standard_errors <- summary(model)$coefficients[, "Std. Error"]
+var <- (log(2))^2 * standard_errors["log(glurange)"]^2
+std_err <- sqrt(var)
+coef_logRange <- coefficients["log(glurange)"]
+coef_estimate <- exp(coef_logRange*log(2))
+
+critical_value_z <- qnorm(0.0125)
+lower_CI <- coef_estimate* exp(critical_value_z* std_err["log(glurange)"])
+upper_CI<- coef_estimate* exp(-critical_value_z * std_err["log(glurange)"])
+
+# Conducting the Wald Z test
+wald_z <- coef_logRange / standard_errors["log(glurange)"]
+p_value<- 2 * (1 - pnorm(abs(wald_z)))
+
+
+# printing out
+print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model (Range) is: ",
+            round(coef_estimate[["log(glurange)"]], 2), 
+            " (", round(lower_CI[["log(glurange)"]], 2), ", ",
+            round(upper_CI[["log(glurange)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value[["log(glurange)"]], 2)))
+
+```
+
+```{r}
+# same things for adjusted model
+coefficients_a <- coef(model_a)
+standard_errors_a <- summary(model_a)$coefficients[, "Std. Error"]
+var_a <- (log(2))^2 * standard_errors_a["log(glurange)"]^2
+std_err_a <- sqrt(var_a)
+coef_logRange_a <- coefficients_a["log(glurange)"]
+coef_estimate_a <- exp(coef_logRange_a*log(2))
+
+lower_CI_a <- coef_estimate_a * exp(critical_value_z * std_err_a["log(glurange)"])
+upper_CI_a <- coef_estimate_a * exp(-critical_value_z * std_err_a["log(glurange)"])
+
+# Conducting the Wald Z test
+wald_z_a <- coef_logRange_a / standard_errors_a["log(glurange)"]
+p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
+
+
+# print out values
+print(paste0("Odds ratio and 95% CI in Secondary exposure adjusted model Range is: ",
+            round(coef_estimate_a[["log(glurange)"]], 2), 
+            " (", round(lower_CI_a[["log(glurange)"]], 2), ", ",
+            round(upper_CI_a[["log(glurange)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value_a[["log(glurange)"]], 2)))
+
+```
+
+
+```{r}
+# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
+# interested predictor variable is now standard deviation of donor glucose measurements. "glusd"
+# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+
+model <- glm(delayed_fn ~ log(glusd), data = df, family = "binomial")
+model_a <- glm(delayed_fn ~ log(glusd) + d_age + as.factor(d_cod) + 
+                 hemo_instability , data = df, family = "binomial")
+
+
+
+```
+
+```{r}
+# odds ratio extraction, CI creation. Testing
+coefficients <- coef(model)
+standard_errors <- summary(model)$coefficients[, "Std. Error"]
+var <- (log(2))^2 * standard_errors["log(glusd)"]^2
+std_err <- sqrt(var)
+coef_logSd <- coefficients["log(glusd)"]
+coef_estimate <- exp(coef_logSd*log(2))
+
+critical_value_z <- qnorm(0.0125)
+lower_CI <- coef_estimate* exp(critical_value_z* std_err["log(glusd)"])
+upper_CI<- coef_estimate* exp(-critical_value_z * std_err["log(glusd)"])
+
+# Conducting the Wald Z test
+wald_z <- coef_logSd / standard_errors["log(glusd)"]
+p_value<- 2 * (1 - pnorm(abs(wald_z)))
+
+
+# printing out
+print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model (Sd) is: ",
+            round(coef_estimate[["log(glusd)"]], 2), 
+            " (", round(lower_CI[["log(glusd)"]], 2), ", ",
+            round(upper_CI[["log(glusd)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value[["log(glusd)"]], 2)))
+```
+```{r}
+# same things for adjusted model
+coefficients_a <- coef(model_a)
+standard_errors_a <- summary(model_a)$coefficients[, "Std. Error"]
+var_a <- (log(2))^2 * standard_errors_a["log(glusd)"]^2
+std_err_a <- sqrt(var_a)
+coef_logSd_a <- coefficients_a["log(glusd)"]
+coef_estimate_a <- exp(coef_logSd_a*log(2))
+
+lower_CI_a <- coef_estimate_a * exp(critical_value_z * std_err_a["log(glusd)"])
+upper_CI_a <- coef_estimate_a * exp(-critical_value_z * std_err_a["log(glusd)"])
+
+# Conducting the Wald Z test
+wald_z_a <- coef_logSd_a / standard_errors_a["log(glusd)"]
+p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
+
+
+# print out values
+print(paste0("Odds ratio and 95% CI in Secondary exposure adjusted model Range is: ",
+            round(coef_estimate_a[["log(glusd)"]], 2), 
+            " (", round(lower_CI_a[["log(glusd)"]], 2), ", ",
+            round(upper_CI_a[["log(glusd)"]], 2),")" ))
+
+print(paste0("The p value is: ",
+             round(p_value_a[["log(glusd)"]], 2)))
+
 ```
 
