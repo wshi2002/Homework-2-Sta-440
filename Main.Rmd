@@ -1,5 +1,5 @@
 ---
-title: "Main"
+title: "Reproducibility - HW 2"
 author: "Wendy Shi"
 date: "2023-11-22"
 output:
@@ -11,6 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning= FALSE, message = FALSE)
 ```
 
+## Loading in Data
 
 ```{r}
 # load in libraries
@@ -29,14 +30,17 @@ df <- vroom("ddh.csv")
 head(df)
 ```
 
+\vspace{30pt}
+
+## Reproduction of the first box-plot
+
 ```{r Figure 1, fig.cap="Boxplots of time-weighted average of donor glucose measurements, donor glucose range, and donor glucose standard deviation for 427 recipients experiencing initial graft function (IGF in white) and for 145 recipients experiencing liver graft dysfunction (LGD, in gray)."}
 
 # faceted by IGF and LGD (initial graft function and liver graft dysfunction)
 # Identified by variable "delayed_fn", "1" = yes.
 # Ploted vertically on a logrithmic scale
 
-
-
+# creating a boxplot for the TWA values
 twa<-ggplot(df, aes(x = factor(delayed_fn), y = glutwa, fill = factor(delayed_fn))) +
   
   # error bars function to create horizontal lines at ends of whiskers
@@ -62,7 +66,7 @@ twa<-ggplot(df, aes(x = factor(delayed_fn), y = glutwa, fill = factor(delayed_fn
   labs(title="", x= "TWA", y="") +
   theme(legend.position="none")
     
-
+# creating boxplot for range values of glucose measurements
 range <- ggplot(df, aes(x = factor(delayed_fn), y=glurange, fill=factor(delayed_fn))) +
   stat_boxplot(geom ='errorbar', coef = Inf, size = 0.2) + 
   geom_boxplot(coef = Inf, size = 0.2) +
@@ -73,7 +77,8 @@ range <- ggplot(df, aes(x = factor(delayed_fn), y=glurange, fill=factor(delayed_
   scale_x_discrete(labels=c("0"="IGF", "1"="LGD")) +
   labs(title="", x= "Range", y="") +
   theme(legend.position="none")
-    
+
+# Creating a plot for standard deviation values of glucose measurements 
 sd <- ggplot(df, aes(x = factor(delayed_fn), y=glusd, fill=factor(delayed_fn))) +
   stat_boxplot(geom ='errorbar', coef = Inf, size = 0.2) + 
   geom_boxplot(coef = Inf, size = 0.2) + 
@@ -85,13 +90,22 @@ sd <- ggplot(df, aes(x = factor(delayed_fn), y=glusd, fill=factor(delayed_fn))) 
     labs(title="", x= "SD", y="")+
     theme(legend.position="none")
 
-
+# putting all plots together
 twa + range + sd + plot_annotation(title = "Donor Glucose Measures mg/dl")
 ```
+
+\vspace{30pt}
+
+## Create models to recreate Table 2
+
+### Primary Exposure Models
+
 ```{r}
-# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
-# interested predictor variable is twa of donor glucose measurements "glutwa".
-# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+# create a multivariable logistic regression model where the response is liver 
+# graft function "delayed_fn" interested predictor variable is twa of donor 
+# glucose measurements "glutwa". Controling for other predictors such as age, 
+# cause of death, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", 
+# "hemo_instability"
 
 model <- glm(delayed_fn ~ log(glutwa), data = df, family = "binomial")
 
@@ -99,8 +113,6 @@ model_a <- glm(delayed_fn ~ log(glutwa) + d_age + as.factor(d_cod) +
                  hemo_instability , data = df, family = "binomial")
 
 ```
-
-
 
 ```{r}
 # odds ratio extraction, CI creation. Testing
@@ -145,6 +157,8 @@ print(paste0("The p value is: ",
 # Paper is doing a profile likelihood instead of a wald test
 ```
 
+
+\vspace{20pt}
 ```{r}
 # same things for adjusted model
 coefficients_a <- coef(model_a)
@@ -173,10 +187,18 @@ print(paste0("The p value is: ",
 
 ```
 
+\vspace{30pt}
+
+### Secondary Exposure Models
+#### Range
+
 ```{r}
-# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
-# interested predictor variable is now Range of donor glucose measurements. "glurange"
-# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+# create a multivariable logistic regression model where the response is liver 
+# graft function "delayed_fn"
+# Interested predictor variable is now Range of donor glucose measurements. "glurange"
+# Controling for other predictors such as age, cause of death, calculated model 
+# for end stage liver disease score, and hemodynamic instability "d_age", "d_cod",
+# "r_meld_calc", "hemo_instability"
 
 model <- glm(delayed_fn ~ log(glurange), data = df, family = "binomial")
 model_a <- glm(delayed_fn ~ log(glurange) + d_age + as.factor(d_cod) + 
@@ -214,6 +236,9 @@ print(paste0("The p value is: ",
 
 ```
 
+
+\vspace{20pt}
+
 ```{r}
 # same things for adjusted model
 coefficients_a <- coef(model_a)
@@ -242,11 +267,18 @@ print(paste0("The p value is: ",
 
 ```
 
+\vspace{30pt}
+#### Standard Deviation
+
 
 ```{r}
-# create a multivariable logistic regression model where the response is liver graft function "delayed_fn"
-# interested predictor variable is now standard deviation of donor glucose measurements. "glusd"
-# controling for other predictors such as age, cause of death, calculated model for end stage liver disease score, and hemodynamic instability "d_age", "d_cod", "r_meld_calc", "hemo_instability"
+# create a multivariable logistic regression model where the response is liver 
+# graft function "delayed_fn"
+# interested predictor variable is now standard deviation of donor glucose 
+# measurements. "glusd"
+# controling for other predictors such as age, cause of death, calculated model
+# for end stage liver disease score, and hemodynamic instability "d_age",
+# "d_cod", "hemo_instability"
 
 model <- glm(delayed_fn ~ log(glusd), data = df, family = "binomial")
 model_a <- glm(delayed_fn ~ log(glusd) + d_age + as.factor(d_cod) + 
@@ -275,7 +307,7 @@ p_value<- 2 * (1 - pnorm(abs(wald_z)))
 
 
 # printing out
-print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model standard deviation is: ",
+print(paste0("Odds ratio and 95% CI in unadjusted model standard deviation is: ",
             round(coef_estimate[["log(glusd)"]], 2), 
             " (", round(lower_CI[["log(glusd)"]], 2), ", ",
             round(upper_CI[["log(glusd)"]], 2),")" ))
@@ -283,6 +315,7 @@ print(paste0("Odds ratio and 95% CI in secondary exposure unadjusted model stand
 print(paste0("The p value is: ",
              round(p_value[["log(glusd)"]], 2)))
 ```
+
 ```{r}
 # same things for adjusted model
 coefficients_a <- coef(model_a)
@@ -301,7 +334,7 @@ p_value_a <- 2 * (1 - pnorm(abs(wald_z_a)))
 
 
 # print out values
-print(paste0("Odds ratio and 95% CI in Secondary exposure adjusted model standard deviation is: ",
+print(paste0("Odds ratio and 95% CI in adjusted model standard deviation is: ",
             round(coef_estimate_a[["log(glusd)"]], 2), 
             " (", round(lower_CI_a[["log(glusd)"]], 2), ", ",
             round(upper_CI_a[["log(glusd)"]], 2),")" ))
@@ -311,3 +344,11 @@ print(paste0("The p value is: ",
 
 ```
 
+\vspace{50pt}
+
+
+The results were produced in about 6-8 hours. The part that actually took the most work was figuring out how to visually present the box plots without outliers and with horizontal lines at the ends of the whiskers, which I understand is not the most important in terms of reproducibility of results, but I still found worth it to spend a little bit extra time on making them visually complete. The actual models were easier to recreate, however, the odds ratios actually took a few more trials for me to understand. I don't think this is a common way of manipulating the coefficients / interpreting them that we have learned about before in class, and it took some googling and asking chatGPT. 
+
+I was able to mostly reproduce these results, the confidence intervals were sometimes off by about 1/100ths from the values stated in the table from the paper. From asking the professor, I believe the reason for these small discrepancies is because in the paper, they are doing a profile likelihood instead of a wald test to creat the CIs. There were also some actual big discrepancies with regard to the final log odds estimated in with the Secondary Exposures : Standard Deviation, between my results and the table in the paper. My results yielded the log odds : 1.12 and 1.13 for unadjusted and adjusted respectively, and in the table they were 1.03 for both. However, in another part of the paper, they do offer in writing, a very close log odds ratio of 1.14 " standard deviation of donor glucose measurements (P = .13, odds ratio corresponding to a relative doubling in TWA of donor glucose measurements of 1.14 [0.92, 1.42]) " .  I believe that this may be simply a misprint in the table. 
+
+Overall I found it much easier than expected to reproduce these results, I was surprised that even though I wasn't completely familiar with the methods used, it was very easy to learn about and replicate the coding that was used.  
